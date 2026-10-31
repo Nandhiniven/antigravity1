@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Modern, responsive Flood Prediction and Early Warning System using HTML5, CSS3, and Vanilla JavaScript. Features real-time river telemetry, algorithmic risk scoring, Leaflet maps, and simulated alerts.">
+  <title>AquaGuard | Flood Prediction & Early Warning System</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300b4d8'><path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/></svg>">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- SIMULATION DISCLAIMER TOP TICKER -->
+  <aside class="demo-banner" role="banner" aria-label="Simulation Notice">
+    <div class="demo-banner-content">
+      <span class="pulse-indicator"></span>
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <strong>DEMONSTRATION & RESEARCH SYSTEM:</strong>
+      <span>All telemetry data, risk scores, and warning bulletins are simulated for demonstration. Do not use for actual life-safety decisions. For real emergencies, contact your local disaster management authority.</span>
+    </div>
+    <button class="banner-close-btn" id="dismissBannerBtn" aria-label="Dismiss banner" title="Dismiss banner">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </aside>
+
+  <!-- APP CONTAINER -->
+  <div class="app-layout" id="appLayout">
+    
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="app-sidebar" id="appSidebar" aria-label="Primary Navigation">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <div class="logo-icon-wrapper">
+            <i class="fa-solid fa-water-ladder logo-icon"></i>
+          </div>
+          <div class="brand-text">
+            <h2>AquaGuard</h2>
+            <span class="brand-tag">HydroPredict AI</span>
+          </div>
+        </div>
+        <button class="sidebar-toggle-btn mobile-only" id="sidebarCloseBtn" aria-label="Close navigation">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="#home" class="nav-link active" data-page="home">
+              <i class="fa-solid fa-house-chimney-crack nav-icon"></i>
+              <span class="nav-label">Home</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#dashboard" class="nav-link" data-page="dashboard">
+              <i class="fa-solid fa-chart-line nav-icon"></i>
+              <span class="nav-label">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#prediction" class="nav-link" data-page="prediction">
+              <i class="fa-solid fa-brain-circuit nav-icon"></i>
+              <span class="nav-label">Flood Prediction</span>
+              <span class="nav-badge pulse">Demo ML</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#monitoring" class="nav-link" data-page="monitoring">
+              <i class="fa-solid fa-tower-broadcast nav-icon"></i>
+              <span class="nav-label">Live Monitoring</span>
+              <span class="live-dot" title="Live stream active"></span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#map" class="nav-link" data-page="map">
+              <i class="fa-solid fa-map-location-dot nav-icon"></i>
+              <span class="nav-label">Flood Risk Map</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#warnings" class="nav-link" data-page="warnings">
+              <i class="fa-solid fa-triangle-exclamation nav-icon"></i>
+              <span class="nav-label">Early Warning</span>
+              <span class="alert-count-pill" id="sidebarAlertCount">3</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#about" class="nav-link" data-page="about">
+              <i class="fa-solid fa-circle-info nav-icon"></i>
+              <span class="nav-label">About & ML Specs</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Status Card -->
+      <div class="sidebar-footer">
+        <div class="system-status-card">
+          <div class="status-header">
+            <span class="status-dot online"></span>
+            <span class="status-title">System Status</span>
+          </div>
+          <div class="status-details">
+            <div class="status-row">
+              <span>Telemetry:</span>
+              <strong class="text-success" id="sidebarTelemetryStatus">Active (7/7)</strong>
+            </div>
+            <div class="status-row">
+              <span>ML Engine:</span>
+              <span class="code-badge">SimModel v2.4</span>
+            </div>
+            <div class="status-row">
+              <span>Sync Cycle:</span>
+              <span id="sidebarSyncInterval">4s</span>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-outline-cyan w-100 mt-2" id="quickSurgeBtn" title="Simulate rainfall spike across basins">
+            <i class="fa-solid fa-bolt"></i> Simulate Surge
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- SIDEBAR BACKDROP (Mobile) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      
+      <!-- TOP HEADER / NAVBAR -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="menu-toggle-btn" id="mobileMenuToggle" aria-label="Toggle Navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="current-page-breadcrumbs">
+            <span class="breadcrumb-root">AquaGuard</span>
+            <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+            <span class="breadcrumb-active" id="currentPageTitle">Home Overview</span>
+          </div>
+        </div>
+
+        <div class="header-center">
+          <div class="global-search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search river basin, station ID, alert..." autocomplete="off">
+            <div class="search-results-dropdown" id="searchResultsDropdown"></div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Audio Alert Siren Toggle -->
+          <button class="header-icon-btn" id="audioToggleBtn" title="Toggle Audio Siren (Emergency Alert Chime)" aria-label="Toggle Audio Siren">
+            <i class="fa-solid fa-volume-high" id="audioToggleIcon"></i>
+          </button>
+
+          <!-- Live Clock -->
+          <div class="live-clock-badge" id="liveClockBadge" title="Local System Time">
+            <i class="fa-regular fa-clock"></i>
+            <span id="headerLiveClock">--:--:--</span>
+          </div>
+
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown-wrapper">
+            <button class="header-icon-btn" id="notificationBtn" aria-label="View Active Alerts" title="Active Alerts">
+              <i class="fa-solid fa-bell"></i>
+              <span class="notification-badge" id="notificationBadge">3</span>
+            </button>
+            <div class="notification-popover" id="notificationPopover">
+              <div class="notification-header">
+                <h6>Active Simulated Bulletins</h6>
+                <button class="text-btn" id="markAllReadBtn">Clear All</button>
+              </div>
+              <ul class="notification-list" id="headerNotificationList">
+                <!-- Injected via JavaScript -->
+              </ul>
+              <div class="notification-footer">
+                <a href="#warnings" class="view-all-link">Open Early Warning Center <i class="fa-solid fa-arrow-right"></i></a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action: Predict -->
+          <a href="#prediction" class="btn btn-primary btn-sm header-action-btn">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Run Prediction</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT VIEWPORT -->
+      <main class="page-viewport" id="pageViewport">
+
+        <!-- ========================================== -->
+        <!-- 1. HOME PAGE VIEW                          -->
+        <!-- ========================================== -->
+        <section class="page-view active" id="view-home" data-view="home">
+          <!-- Hero Section -->
+          <div class="hero-card">
+            <div class="hero-content">
+              <div class="hero-pill">
+                <i class="fa-solid fa-shield-halved"></i> Next-Gen Hydrological Defense Platform
+              </div>
+              <h1 class="hero-title">Early Flood Prediction & River Telemetry Warning System</h1>
+              <p class="hero-description">
+                AquaGuard combines algorithmic hydrological risk scoring, real-time river sensor feeds, interactive geospatial mapping, and automated safety broadcasts to mitigate flood disasters before waters rise.
+              </p>
+              <div class="hero-actions">
+                <a href="#prediction" class="btn btn-primary btn-lg">
+                  <i class="fa-solid fa-calculator"></i> Run Risk Prediction
+                </a>
+                <a href="#monitoring" class="btn btn-secondary btn-lg">
+                  <i class="fa-solid fa-tower-broadcast"></i> Live Basin Telemetry
+                </a>
+                <a href="#map" class="btn btn-outline-light btn-lg">
+                  <i class="fa-solid fa-map-location-dot"></i> View Risk Map
+                </a>
+              </div>
+            </div>
+            <div class="hero-visual">
+              <div class="radar-card">
+                <div class="radar-circle">
+                  <div class="radar-sweep"></div>
+                  <div class="radar-blip blip-1" title="Station Alpha: Warning"></div>
+                  <div class="radar-blip blip-2" title="Station Delta: Normal"></div>
+                  <div class="radar-blip blip-3" title="Station Highland: Critical"></div>
+                </div>
+                <div class="radar-caption">
+                  <span class="status-pulse-dot"></span> Basin Telemetry Radar Active
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Key Metrics Row -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon-box bg-blue-soft">
+                <i class="fa-solid fa-tower-observation"></i>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Monitored Basins</span>
+                <h3 class="metric-value" id="homeMetricStations">7</h3>
+                <span class="metric-trend text-success"><i class="fa-solid fa-circle-check"></i> 100% Online</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box bg-red-soft">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Active Warning Alerts</span>
+                <h3 class="metric-value text-danger" id="homeMetricAlerts">2</h3>
+                <span class="metric-trend text-danger"><i class="fa-solid fa-arrow-trend-up"></i> 1 Critical Surge</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box bg-cyan-soft">
+                <i class="fa-solid fa-water"></i>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Avg. River Water Level</span>
+                <h3 class="metric-value" id="homeMetricAvgWater">4.82 m</h3>
+                <span class="metric-trend text-warning"><i class="fa-solid fa-angles-up"></i> +0.45 m / 6h</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box bg-indigo-soft">
+                <i class="fa-solid fa-cloud-showers-heavy"></i>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Max Basin Rainfall</span>
+                <h3 class="metric-value" id="homeMetricRainfall">148.5 mm</h3>
+                <span class="metric-trend text-warning"><i class="fa-solid fa-cloud-rain"></i> Highland Valley Creek</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Features Overview & Quick Navigation -->
+          <div class="section-heading mt-4">
+            <div>
+              <h3>System Capabilities & Core Modules</h3>
+              <p class="text-muted">Explore how AquaGuard safeguards downstream communities and infrastructure.</p>
+            </div>
+          </div>
+
+          <div class="feature-cards-grid">
+            <div class="feature-card" data-navigate="prediction">
+              <div class="feature-icon bg-cyan"><i class="fa-solid fa-brain-circuit"></i></div>
+              <h4>Algorithmic Risk Predictor</h4>
+              <p>Computes multi-factor risk scores from 24h rainfall, river gauge depth, previous precipitation, temperature, and soil saturation.</p>
+              <span class="feature-link">Launch Predictor <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+
+            <div class="feature-card" data-navigate="monitoring">
+              <div class="feature-icon bg-blue"><i class="fa-solid fa-satellite-dish"></i></div>
+              <h4>Real-Time Sensor Telemetry</h4>
+              <p>Simulated ultrasonic water level sensors, tipping-bucket rain gauges, and meteorological stream feeds updating every 4 seconds.</p>
+              <span class="feature-link">Inspect Stations <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+
+            <div class="feature-card" data-navigate="map">
+              <div class="feature-icon bg-emerald"><i class="fa-solid fa-map-location-dot"></i></div>
+              <h4>Geospatial Risk Mapping</h4>
+              <p>OpenStreetMap integration with interactive basin markers, color-coded danger thresholds, coordinate queries, and zoom controls.</p>
+              <span class="feature-link">Open Risk Map <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+
+            <div class="feature-card" data-navigate="warnings">
+              <div class="feature-icon bg-amber"><i class="fa-solid fa-bullhorn"></i></div>
+              <h4>Early Warning Dispatch</h4>
+              <p>Automated bulletin generation, audible siren triggers, emergency safety guidelines, and historical event archives stored in localStorage.</p>
+              <span class="feature-link">Review Warnings <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+
+          <!-- Emergency Hotlines & Disaster Advisory Banner -->
+          <div class="emergency-guide-banner mt-4">
+            <div class="banner-text">
+              <h4><i class="fa-solid fa-phone-volume"></i> Emergency Disaster Dispatch Directory</h4>
+              <p>In real life-threatening flood scenarios, immediately contact official emergency services:</p>
+            </div>
+            <div class="hotline-pills">
+              <a href="tel:911" class="hotline-pill"><i class="fa-solid fa-phone"></i> Emergency Services: <strong>911</strong></a>
+              <a href="tel:112" class="hotline-pill"><i class="fa-solid fa-phone"></i> Universal Disaster Line: <strong>112</strong></a>
+              <a href="tel:18005553566" class="hotline-pill"><i class="fa-solid fa-tower-broadcast"></i> Flood Relief Hotline: <strong>1-800-FLOODS</strong></a>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 2. DASHBOARD PAGE VIEW                     -->
+        <!-- ========================================== -->
+        <section class="page-view" id="view-dashboard" data-view="dashboard">
+          <div class="page-header">
+            <div>
+              <h2>Hydro-Meteorological Telemetry Dashboard</h2>
+              <p class="text-muted">Real-time analytical graphs, water level fluctuations, and regional risk distribution.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline btn-sm" id="dashboardRefreshBtn">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh Telemetry
+              </button>
+              <button class="btn btn-secondary btn-sm" id="exportDashboardCsvBtn">
+                <i class="fa-solid fa-file-arrow-down"></i> Export Telemetry CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Top High-Level Metrics -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon-box bg-blue-soft"><i class="fa-solid fa-droplet"></i></div>
+              <div class="metric-info">
+                <span class="metric-label">24h Peak Rainfall</span>
+                <h3 class="metric-value" id="dashPeakRain">162.0 mm</h3>
+                <span class="metric-sub" id="dashPeakRainLoc">Highland Gorge</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box bg-cyan-soft"><i class="fa-solid fa-water-ladder"></i></div>
+              <div class="metric-info">
+                <span class="metric-label">Critical River Basins</span>
+                <h3 class="metric-value text-danger" id="dashCriticalCount">1 / 7</h3>
+                <span class="metric-sub text-danger">Immediate Watch</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box bg-emerald-soft"><i class="fa-solid fa-gauge-high"></i></div>
+              <div class="metric-info">
+                <span class="metric-label">Avg Soil Saturation</span>
+                <h3 class="metric-value" id="dashAvgSaturation">76.4%</h3>
+                <span class="metric-sub text-warning">High Absorption Limit</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box bg-purple-soft"><i class="fa-solid fa-microchip"></i></div>
+              <div class="metric-info">
+                <span class="metric-label">Prediction Confidence</span>
+                <h3 class="metric-value" id="dashModelConfidence">93.8%</h3>
+                <span class="metric-sub text-success">HydroModel Random Forest</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row 1: Dual Axis 24h Trend + Regional Risk Doughnut -->
+          <div class="dashboard-grid-2col mt-4">
+            <div class="content-card">
+              <div class="card-header-flex">
+                <div>
+                  <h4 class="card-title"><i class="fa-solid fa-chart-line text-cyan"></i> 24-Hour Rainfall vs. River Water Level</h4>
+                  <p class="card-subtitle">Correlation between hourly precipitation volume and river gauge heights.</p>
+                </div>
+                <div class="select-wrapper">
+                  <select id="trendStationSelect" class="form-select-sm" aria-label="Select basin station for trend">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+              </div>
+              <div class="chart-container" style="position: relative; height: 320px;">
+                <canvas id="rainfallWaterChart"></canvas>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="card-header-flex">
+                <div>
+                  <h4 class="card-title"><i class="fa-solid fa-chart-pie text-blue"></i> Basin Risk Level Distribution</h4>
+                  <p class="card-subtitle">Proportion of monitored river basins per risk tier.</p>
+                </div>
+                <span class="badge badge-info" id="riskDistributionBadge">7 Monitored</span>
+              </div>
+              <div class="chart-container" style="position: relative; height: 320px;">
+                <canvas id="riskDistributionChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row 2: 7-Day Precipitation Outlook & Station Telemetry Table -->
+          <div class="dashboard-grid-2col mt-4">
+            <div class="content-card">
+              <div class="card-header-flex">
+                <div>
+                  <h4 class="card-title"><i class="fa-solid fa-cloud-bolt text-amber"></i> 7-Day Rainfall Forecast & Runoff Threat</h4>
+                  <p class="card-subtitle">Projected precipitation volume and expected surface runoff coefficient.</p>
+                </div>
+                <span class="badge badge-warning">Simulated Forecast</span>
+              </div>
+              <div class="chart-container" style="position: relative; height: 300px;">
+                <canvas id="forecastRunoffChart"></canvas>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="card-header-flex">
+                <div>
+                  <h4 class="card-title"><i class="fa-solid fa-table-list text-cyan"></i> Live Telemetry Snapshot</h4>
+                  <p class="card-subtitle">Immediate river sensor telemetry readings across key stations.</p>
+                </div>
+                <a href="#monitoring" class="btn btn-sm btn-outline-cyan">View All Stations</a>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Station</th>
+                      <th>Water Level</th>
+                      <th>24h Rain</th>
+                      <th>Risk Level</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboardTelemetryTableBody">
+                    <!-- Injected by script.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 3. FLOOD PREDICTION PAGE VIEW              -->
+        <!-- ========================================== -->
+        <section class="page-view" id="view-prediction" data-view="prediction">
+          <div class="page-header">
+            <div>
+              <h2>Algorithmic Flood Risk Prediction</h2>
+              <p class="text-muted">Enter hydrological and meteorological parameters to compute real-time flood risk scores, flood lead times, and emergency action checklists.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline btn-sm" id="loadPresetSevereBtn">
+                <i class="fa-solid fa-cloud-showers-water"></i> Load Severe Scenario
+              </button>
+              <button class="btn btn-outline btn-sm" id="loadPresetNormalBtn">
+                <i class="fa-solid fa-sun"></i> Load Normal Scenario
+              </button>
+            </div>
+          </div>
+
+          <!-- Prediction Grid -->
+          <div class="prediction-grid">
+            
+            <!-- Left: Input Form Card -->
+            <div class="content-card">
+              <div class="card-header-flex">
+                <h4 class="card-title"><i class="fa-solid fa-sliders text-cyan"></i> Hydrological Telemetry Parameters</h4>
+                <span class="badge badge-light">Multi-Factor Model</span>
+              </div>
+
+              <form id="floodPredictionForm" novalidate>
+                <!-- Location / Station Selection -->
+                <div class="form-group">
+                  <label for="predLocation" class="form-label">
+                    Target Basin / Location <span class="required">*</span>
+                  </label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-location-dot input-icon"></i>
+                    <select id="predLocation" class="form-control" required>
+                      <option value="">-- Choose Basin or Custom Region --</option>
+                      <option value="Station Alpha (North River Valley)">Station Alpha (North River Valley)</option>
+                      <option value="Station Bravo (Metro Delta Junction)">Station Bravo (Metro Delta Junction)</option>
+                      <option value="Station Charlie (East Estuary)">Station Charlie (East Estuary)</option>
+                      <option value="Station Delta (Highland Gorge Reservoir)">Station Delta (Highland Gorge Reservoir)</option>
+                      <option value="Station Echo (Pine Ridge Creek)">Station Echo (Pine Ridge Creek)</option>
+                      <option value="Station Foxtrot (South Bay Marshlands)">Station Foxtrot (South Bay Marshlands)</option>
+                      <option value="Custom Urban Drainage Zone">Custom Urban Drainage Zone</option>
+                    </select>
+                  </div>
+                  <div class="form-feedback" id="feedback-location"></div>
+                </div>
+
+                <!-- 2-Column Inputs: Rainfall and River Water Level -->
+                <div class="form-row-2col">
+                  <div class="form-group">
+                    <label for="predRainfall" class="form-label">
+                      Current / 24h Rainfall (mm) <span class="required">*</span>
+                      <i class="fa-solid fa-circle-question tooltip-icon" title="Precipitation depth in millimeters during the past 24 hours."></i>
+                    </label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-cloud-rain input-icon"></i>
+                      <input type="number" id="predRainfall" class="form-control" min="0" max="500" step="0.1" placeholder="e.g. 85.5" required>
+                    </div>
+                    <div class="input-hint">Range: 0 - 500 mm</div>
+                    <div class="form-feedback" id="feedback-rainfall"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="predWaterLevel" class="form-label">
+                      River Water Level (meters) <span class="required">*</span>
+                      <i class="fa-solid fa-circle-question tooltip-icon" title="Gauge height above baseline. Danger threshold typically starts above 6.0m."></i>
+                    </label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-water-ladder input-icon"></i>
+                      <input type="number" id="predWaterLevel" class="form-control" min="0" max="25" step="0.05" placeholder="e.g. 5.40" required>
+                    </div>
+                    <div class="input-hint">Range: 0 - 25.0 m (Danger: &gt;6.5m)</div>
+                    <div class="form-feedback" id="feedback-waterlevel"></div>
+                  </div>
+                </div>
+
+                <!-- 2-Column Inputs: Previous Rainfall and Soil Saturation -->
+                <div class="form-row-2col">
+                  <div class="form-group">
+                    <label for="predPrevRainfall" class="form-label">
+                      Previous 3-Day Rainfall (mm) <span class="required">*</span>
+                      <i class="fa-solid fa-circle-question tooltip-icon" title="Antecedent precipitation indicating how saturated the watershed already is."></i>
+                    </label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-cloud-showers-heavy input-icon"></i>
+                      <input type="number" id="predPrevRainfall" class="form-control" min="0" max="600" step="0.1" placeholder="e.g. 110.0" required>
+                    </div>
+                    <div class="input-hint">Antecedent 72h moisture</div>
+                    <div class="form-feedback" id="feedback-prevrainfall"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="predSoilSaturation" class="form-label">
+                      Soil Saturation Index (%) <span class="required">*</span>
+                      <i class="fa-solid fa-circle-question tooltip-icon" title="Percentage of soil pore volume filled with water. High saturation leads to direct runoff."></i>
+                    </label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-earth-americas input-icon"></i>
+                      <input type="number" id="predSoilSaturation" class="form-control" min="0" max="100" step="1" placeholder="e.g. 82" required>
+                    </div>
+                    <div class="input-hint">0% (bone dry) to 100% (saturated)</div>
+                    <div class="form-feedback" id="feedback-soilsaturation"></div>
+                  </div>
+                </div>
+
+                <!-- 2-Column Inputs: Temperature and Humidity -->
+                <div class="form-row-2col">
+                  <div class="form-group">
+                    <label for="predTemperature" class="form-label">
+                      Ambient Temperature (°C) <span class="required">*</span>
+                    </label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-temperature-half input-icon"></i>
+                      <input type="number" id="predTemperature" class="form-control" min="-20" max="60" step="0.5" placeholder="e.g. 24.5" required>
+                    </div>
+                    <div class="input-hint">Range: -20°C to +60°C</div>
+                    <div class="form-feedback" id="feedback-temperature"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="predHumidity" class="form-label">
+                      Relative Humidity (%) <span class="required">*</span>
+                    </label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-droplet-percent input-icon"></i>
+                      <input type="number" id="predHumidity" class="form-control" min="0" max="100" step="1" placeholder="e.g. 92" required>
+                    </div>
+                    <div class="input-hint">Range: 0% to 100%</div>
+                    <div class="form-feedback" id="feedback-humidity"></div>
+                  </div>
+                </div>
+
+                <!-- Drainage Infrastructure Condition -->
+                <div class="form-group">
+                  <label for="predDrainageStatus" class="form-label">
+                    Drainage / Spillway Capacity Condition
+                  </label>
+                  <select id="predDrainageStatus" class="form-control">
+                    <option value="1.0">Optimal (Dredged, clear culverts, full spillway flow)</option>
+                    <option value="1.15" selected>Moderate (Normal urban sedimentation, minor debris)</option>
+                    <option value="1.35">Severely Constrained (High siltation, choked storm canals)</option>
+                  </select>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="form-actions mt-3">
+                  <button type="submit" class="btn btn-primary btn-lg w-100" id="predictFloodRiskBtn">
+                    <i class="fa-solid fa-shield-virus"></i>
+                    <span>Predict Flood Risk</span>
+                  </button>
+                  <button type="button" class="btn btn-outline mt-2 w-100" id="resetPredictionFormBtn">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Form
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Right: Prediction Results Card -->
+            <div class="prediction-results-wrapper">
+              
+              <!-- Result Box (Dynamic) -->
+              <div class="content-card result-card" id="predictionResultCard">
+                <div class="card-header-flex">
+                  <h4 class="card-title"><i class="fa-solid fa-bullseye text-cyan"></i> Risk Assessment Outcome</h4>
+                  <span class="badge" id="riskBadgeStatus">Awaiting Computation</span>
+                </div>
+
+                <!-- Placeholder state before calculation -->
+                <div class="empty-result-placeholder" id="emptyResultPlaceholder">
+                  <div class="placeholder-icon">
+                    <i class="fa-solid fa-chart-pie"></i>
+                  </div>
+                  <h5>Ready for Computation</h5>
+                  <p>Fill out the hydrological parameters on the left and click <strong>Predict Flood Risk</strong> to calculate multi-factor flood probability.</p>
+                  <button class="btn btn-sm btn-outline-cyan mt-2" id="quickTestRunBtn">
+                    <i class="fa-solid fa-bolt"></i> Run Quick Simulation Sample
+                  </button>
+                </div>
+
+                <!-- Output State (Revealed after calculation) -->
+                <div class="calculated-result-view hidden" id="calculatedResultView">
+                  
+                  <!-- Risk Score Gauge / Visual Indicator -->
+                  <div class="risk-gauge-box">
+                    <div class="risk-meter-wrapper">
+                      <div class="risk-circle-meter" id="riskCircleMeter">
+                        <svg viewBox="0 0 120 120" class="circular-chart">
+                          <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                          <path class="circle-fill" id="riskCircleFill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                        <div class="circle-inner-label">
+                          <span class="score-number" id="resultScoreValue">0</span>
+                          <span class="score-max">/ 100</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="risk-summary-text">
+                      <span class="risk-level-tag" id="resultRiskLevel">LOW RISK</span>
+                      <h3 class="risk-title" id="resultRiskHeadline">Normal River Conditions</h3>
+                      <p class="risk-desc" id="resultRiskDescription">Hydrological parameters are currently within safe thresholds. Minimal threat of overland flooding.</p>
+                    </div>
+                  </div>
+
+                  <!-- Key Indices Mini Grid -->
+                  <div class="result-indices-grid">
+                    <div class="index-pill">
+                      <span class="index-title">Estimated Time to Peak</span>
+                      <strong class="index-val" id="resultTimeToPeak">&gt; 36 Hours</strong>
+                    </div>
+                    <div class="index-pill">
+                      <span class="index-title">Runoff Ratio</span>
+                      <strong class="index-val" id="resultRunoffRatio">0.34</strong>
+                    </div>
+                    <div class="index-pill">
+                      <span class="index-title">Model Confidence</span>
+                      <strong class="index-val text-success" id="resultConfidence">94.2%</strong>
+                    </div>
+                  </div>
+
+                  <!-- Radar / Breakdown of Contributing Risk Factors -->
+                  <div class="factors-breakdown mt-3">
+                    <h5 class="section-subheading"><i class="fa-solid fa-chart-simple text-cyan"></i> Factor Contributions to Total Risk</h5>
+                    <div class="factor-progress-item">
+                      <div class="factor-label-row">
+                        <span>River Water Level Gauge (35% Weight)</span>
+                        <strong id="barLabelWater">22%</strong>
+                      </div>
+                      <div class="progress-bar-bg">
+                        <div class="progress-bar-fill bg-cyan" id="barFillWater" style="width: 22%;"></div>
+                      </div>
+                    </div>
+
+                    <div class="factor-progress-item">
+                      <div class="factor-label-row">
+                        <span>24h Rainfall Intensity (30% Weight)</span>
+                        <strong id="barLabelRain">15%</strong>
+                      </div>
+                      <div class="progress-bar-bg">
+                        <div class="progress-bar-fill bg-blue" id="barFillRain" style="width: 15%;"></div>
+                      </div>
+                    </div>
+
+                    <div class="factor-progress-item">
+                      <div class="factor-label-row">
+                        <span>Antecedent 3-Day Moisture (15% Weight)</span>
+                        <strong id="barLabelPrevRain">18%</strong>
+                      </div>
+                      <div class="progress-bar-bg">
+                        <div class="progress-bar-fill bg-purple" id="barFillPrevRain" style="width: 18%;"></div>
+                      </div>
+                    </div>
+
+                    <div class="factor-progress-item">
+                      <div class="factor-label-row">
+                        <span>Soil Saturation & Drainage (20% Weight)</span>
+                        <strong id="barLabelSoil">30%</strong>
+                      </div>
+                      <div class="progress-bar-bg">
+                        <div class="progress-bar-fill bg-emerald" id="barFillSoil" style="width: 30%;"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Safety Recommendations Box -->
+                  <div class="safety-advisory-box mt-3" id="safetyAdvisoryBox">
+                    <h5><i class="fa-solid fa-life-ring"></i> Operational Safety Recommendations</h5>
+                    <ul class="safety-list" id="safetyRecommendationsList">
+                      <!-- Populated dynamically -->
+                    </ul>
+                  </div>
+
+                  <!-- Action Buttons on Result -->
+                  <div class="result-action-buttons mt-3">
+                    <button class="btn btn-warning btn-sm" id="broadcastPredictionAlertBtn">
+                      <i class="fa-solid fa-triangle-exclamation"></i> Broadcast to Early Warning
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="exportPredictionJsonBtn">
+                      <i class="fa-solid fa-code"></i> Copy ML JSON Payload
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transparent Algorithm Explanation Accordion -->
+              <div class="content-card mt-3">
+                <div class="collapsible-header" id="algorithmAccordionToggle">
+                  <div class="header-left-title">
+                    <i class="fa-solid fa-square-root-variable text-cyan"></i>
+                    <strong>Demonstration Risk-Scoring Algorithm Formula & Weights</strong>
+                  </div>
+                  <i class="fa-solid fa-chevron-down chevron-icon" id="algoChevron"></i>
+                </div>
+                <div class="collapsible-body" id="algorithmAccordionBody">
+                  <div class="algo-explanation">
+                    <p>The demonstration risk engine evaluates hydrological input vectors through a transparent normalized multi-criteria weighting equation:</p>
+                    
+                    <div class="formula-box">
+                      <code>
+                        Risk Score = (0.35 &times; I<sub>Water</sub>) + (0.30 &times; I<sub>Rain</sub>) + (0.15 &times; I<sub>Antecedent</sub>) + (0.12 &times; I<sub>Soil</sub>) + (0.08 &times; I<sub>Atmos</sub>) &times; D<sub>Factor</sub>
+                      </code>
+                    </div>
+
+                    <div class="algo-weights-table">
+                      <div class="algo-weight-row">
+                        <span class="badge badge-light">35%</span>
+                        <strong>River Gauge Height (I<sub>Water</sub>):</strong>
+                        <span>Normalized against critical bank-full stage (7.5 meters).</span>
+                      </div>
+                      <div class="algo-weight-row">
+                        <span class="badge badge-light">30%</span>
+                        <strong>24-Hour Rainfall (I<sub>Rain</sub>):</strong>
+                        <span>Exponential curve exceeding flash-flood threshold of 120 mm.</span>
+                      </div>
+                      <div class="algo-weight-row">
+                        <span class="badge badge-light">15%</span>
+                        <strong>3-Day Antecedent Rain (I<sub>Antecedent</sub>):</strong>
+                        <span>Captures cumulative watershed basin moisture storage.</span>
+                      </div>
+                      <div class="algo-weight-row">
+                        <span class="badge badge-light">12%</span>
+                        <strong>Soil Saturation (I<sub>Soil</sub>):</strong>
+                        <span>Pore saturation limits infiltration, triggering overland sheet runoff.</span>
+                      </div>
+                      <div class="algo-weight-row">
+                        <span class="badge badge-light">8%</span>
+                        <strong>Atmospheric Index (I<sub>Atmos</sub>):</strong>
+                        <span>Compound function of relative humidity and vapor deficit.</span>
+                      </div>
+                    </div>
+
+                    <div class="risk-threshold-scale mt-3">
+                      <span class="scale-item scale-low"><strong>0 - 34:</strong> Low</span>
+                      <span class="scale-item scale-med"><strong>35 - 59:</strong> Medium</span>
+                      <span class="scale-item scale-high"><strong>60 - 79:</strong> High</span>
+                      <span class="scale-item scale-crit"><strong>80 - 100:</strong> Critical</span>
+                    </div>
+
+                    <div class="alert alert-info mt-2">
+                      <i class="fa-solid fa-code-branch"></i>
+                      <span><strong>ML Backend Extensibility:</strong> Designed to seamlessly map to Python Scikit-learn or XGBoost models via <code>/api/v1/predict</code> REST endpoint.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 4. LIVE MONITORING PAGE VIEW               -->
+        <!-- ========================================== -->
+        <section class="page-view" id="view-monitoring" data-view="monitoring">
+          <div class="page-header">
+            <div>
+              <h2>Live Basin Telemetry & Sensor Feeds</h2>
+              <p class="text-muted">Simulated multi-station telemetry monitoring river water depths, flow velocity, rainfall rate, and station health.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline btn-sm" id="toggleLiveStreamBtn">
+                <i class="fa-solid fa-circle-play" id="liveStreamIcon"></i>
+                <span id="liveStreamBtnText">Pause Auto-Stream</span>
+              </button>
+              <button class="btn btn-outline btn-sm" id="manualTelemetryRefreshBtn">
+                <i class="fa-solid fa-arrows-rotate"></i> Poll Now
+              </button>
+              <button class="btn btn-warning btn-sm" id="simulateSurgeMonitorBtn">
+                <i class="fa-solid fa-cloud-bolt"></i> Inject Heavy Rain Surge
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter & Controls Toolbar -->
+          <div class="toolbar-card">
+            <div class="toolbar-left">
+              <div class="input-with-icon search-filter">
+                <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                <input type="text" id="stationFilterSearch" placeholder="Filter by station name, basin, or ID..." class="form-control form-control-sm">
+              </div>
+              <div class="select-filter">
+                <select id="stationRiskFilter" class="form-control form-control-sm" aria-label="Filter by risk category">
+                  <option value="all">All Risk Levels</option>
+                  <option value="Low">Low Risk Only</option>
+                  <option value="Medium">Medium Risk Only</option>
+                  <option value="High">High Risk Only</option>
+                  <option value="Critical">Critical Risk Only</option>
+                </select>
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <div class="view-mode-toggle" role="group" aria-label="View mode">
+                <button class="view-btn active" id="viewGridModeBtn" title="Grid Card View"><i class="fa-solid fa-grip"></i></button>
+                <button class="view-btn" id="viewTableModeBtn" title="Tabular View"><i class="fa-solid fa-table"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Live Telemetry Trend Chart for Selected Basin -->
+          <div class="content-card mb-4 mt-3">
+            <div class="card-header-flex">
+              <div>
+                <h4 class="card-title"><i class="fa-solid fa-wave-square text-cyan"></i> Real-Time Water Gauge Telemetry Stream</h4>
+                <p class="card-subtitle">Continuous live data stream updated every 4 seconds.</p>
+              </div>
+              <div class="stream-status-badge">
+                <span class="live-dot pulse"></span>
+                <span id="telemetryStreamTimestamp">Streaming Active</span>
+              </div>
+            </div>
+            <div class="chart-container" style="position: relative; height: 260px;">
+              <canvas id="liveTelemetryStreamChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Stations Container: Grid View -->
+          <div class="station-cards-grid" id="stationGridContainer">
+            <!-- Dynamically populated station cards -->
+          </div>
+
+          <!-- Stations Container: Table View (Hidden by default) -->
+          <div class="content-card hidden mt-3" id="stationTableContainer">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Station ID & Name</th>
+                    <th>Region / River Basin</th>
+                    <th>Water Gauge</th>
+                    <th>24h Rainfall</th>
+                    <th>Discharge Flow</th>
+                    <th>Risk Level</th>
+                    <th>Battery</th>
+                    <th>Last Update</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="fullStationTableBody">
+                  <!-- Populated by script.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 5. FLOOD RISK MAP PAGE VIEW                -->
+        <!-- ========================================== -->
+        <section class="page-view" id="view-map" data-view="map">
+          <div class="page-header">
+            <div>
+              <h2>Geospatial Flood Risk & River Basin Map</h2>
+              <p class="text-muted">Interactive Leaflet OpenStreetMap visualization of river monitoring stations, flood warning zones, and danger boundaries.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline btn-sm" id="resetMapCenterBtn">
+                <i class="fa-solid fa-crosshairs"></i> Recenter Map
+              </button>
+            </div>
+          </div>
+
+          <!-- Map Controls Card -->
+          <div class="map-controls-bar">
+            <div class="map-filter-group">
+              <span class="filter-label"><i class="fa-solid fa-filter"></i> Filter Markers:</span>
+              <button class="map-filter-pill active" data-map-filter="all">All (7)</button>
+              <button class="map-filter-pill pill-critical" data-map-filter="Critical">Critical</button>
+              <button class="map-filter-pill pill-high" data-map-filter="High">High</button>
+              <button class="map-filter-pill pill-medium" data-map-filter="Medium">Medium</button>
+              <button class="map-filter-pill pill-low" data-map-filter="Low">Low</button>
+            </div>
+
+            <div class="map-legend">
+              <span class="legend-item"><span class="legend-dot dot-low"></span> Normal (&lt; 35)</span>
+              <span class="legend-item"><span class="legend-dot dot-medium"></span> Advisory (35-59)</span>
+              <span class="legend-item"><span class="legend-dot dot-high"></span> Warning (60-79)</span>
+              <span class="legend-item"><span class="legend-dot dot-critical"></span> Critical (&ge; 80)</span>
+            </div>
+          </div>
+
+          <!-- Map Container -->
+          <div class="map-wrapper-card">
+            <div id="floodRiskLeafletMap" class="leaflet-map-container" style="height: 560px; width: 100%; border-radius: var(--radius-md);"></div>
+            
+            <!-- Floating Map Station Info Drawer -->
+            <div class="map-floating-panel" id="mapFloatingPanel">
+              <div class="panel-header">
+                <h5 id="panelStationTitle">Select a River Station</h5>
+                <button class="panel-close-btn" id="closeMapPanelBtn">&times;</button>
+              </div>
+              <div class="panel-body" id="panelStationBody">
+                <p class="text-muted">Click any colored station marker on the map to inspect real-time river stage, alert status, and historical hydrograph.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 6. EARLY WARNING PAGE VIEW                 -->
+        <!-- ========================================== -->
+        <section class="page-view" id="view-warnings" data-view="warnings">
+          <div class="page-header">
+            <div>
+              <h2>Early Warning & Emergency Dispatch System</h2>
+              <p class="text-muted">Simulated multi-channel flood alerts, severity bulletins, alert acknowledgement, and evacuation safety guidelines.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-danger btn-sm" id="triggerEmergencySirenBtn">
+                <i class="fa-solid fa-bell"></i> Test Siren Sound
+              </button>
+              <button class="btn btn-outline btn-sm" id="createNewAlertModalBtn">
+                <i class="fa-solid fa-plus"></i> Simulate Custom Bulletin
+              </button>
+              <button class="btn btn-outline-cyan btn-sm" id="exportAlertsJsonBtn">
+                <i class="fa-solid fa-download"></i> Export Alert History
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Siren Warning Banner -->
+          <div class="active-critical-banner" id="activeCriticalBanner">
+            <div class="banner-siren-icon pulse-animation">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="banner-text">
+              <h4>CRITICAL FLOOD SURGE WARNING &bull; SIMULATION ACTIVE</h4>
+              <p id="criticalBannerStationText">Station Delta (Highland Gorge Reservoir) has breached critical flood barrier threshold (7.82m / 8.0m limit). Rapid surge underway.</p>
+            </div>
+            <div class="banner-action">
+              <a href="#prediction" class="btn btn-light btn-sm" id="investigateCriticalBtn">Investigate Station</a>
+            </div>
+          </div>
+
+          <!-- Alert History & Filter Toolbar -->
+          <div class="content-card mt-4">
+            <div class="card-header-flex">
+              <div>
+                <h4 class="card-title"><i class="fa-solid fa-clock-rotate-left text-cyan"></i> Emergency Alert History Log</h4>
+                <p class="card-subtitle">Stored in browser localStorage for persistent incident tracking.</p>
+              </div>
+              <div class="filter-pills-row" id="alertSeverityFilterGroup">
+                <button class="filter-pill active" data-alert-filter="all">All Alerts</button>
+                <button class="filter-pill" data-alert-filter="Critical">Critical</button>
+                <button class="filter-pill" data-alert-filter="High">High</button>
+                <button class="filter-pill" data-alert-filter="Medium">Medium</button>
+                <button class="filter-pill" data-alert-filter="Low">Low / Resolved</button>
+              </div>
+            </div>
+
+            <!-- Alerts List Container -->
+            <div class="alerts-history-list" id="alertsHistoryList">
+              <!-- Dynamically populated alert items -->
+            </div>
+          </div>
+
+          <!-- Evacuation & Preparedness Standard Operating Procedure (SOP) -->
+          <div class="section-heading mt-4">
+            <div>
+              <h3>Flood Safety Protocols & Standard Operating Procedures</h3>
+              <p class="text-muted">Guidelines for communities and emergency responders before, during, and after flood events.</p>
+            </div>
+          </div>
+
+          <div class="sop-cards-grid">
+            <div class="sop-card">
+              <div class="sop-header bg-cyan-soft">
+                <i class="fa-solid fa-person-shelter"></i>
+                <h5>1. Pre-Flood Preparation</h5>
+              </div>
+              <ul class="sop-checklist">
+                <li><i class="fa-solid fa-check text-success"></i> Prepare emergency go-bag: potable water (3 days), non-perishables, flashlight, battery radio.</li>
+                <li><i class="fa-solid fa-check text-success"></i> Elevate critical electrical appliances and shut off main circuit breakers.</li>
+                <li><i class="fa-solid fa-check text-success"></i> Verify community evacuation route to designated high ground or cyclone/flood shelters.</li>
+                <li><i class="fa-solid fa-check text-success"></i> Secure hazardous chemicals, fuel tanks, and outdoor furniture.</li>
+              </ul>
+            </div>
+
+            <div class="sop-card">
+              <div class="sop-header bg-amber-soft">
+                <i class="fa-solid fa-life-ring"></i>
+                <h5>2. During Active Flood Wave</h5>
+              </div>
+              <ul class="sop-checklist">
+                <li><i class="fa-solid fa-triangle-exclamation text-warning"></i> <strong>"Turn Around, Don't Drown":</strong> Never walk or drive through moving water. 15cm sweeps people; 30cm moves cars.</li>
+                <li><i class="fa-solid fa-triangle-exclamation text-warning"></i> Move immediately to upper stories or roof if trapped in building. Avoid attic without roof exit.</li>
+                <li><i class="fa-solid fa-triangle-exclamation text-warning"></i> Keep emergency radio tuned to AquaGuard hydro-telemetry bulletins.</li>
+                <li><i class="fa-solid fa-triangle-exclamation text-warning"></i> Signal distress using bright cloth, flashlight, or emergency whistle.</li>
+              </ul>
+            </div>
+
+            <div class="sop-card">
+              <div class="sop-header bg-emerald-soft">
+                <i class="fa-solid fa-house-chimney-medical"></i>
+                <h5>3. Post-Flood Recovery</h5>
+              </div>
+              <ul class="sop-checklist">
+                <li><i class="fa-solid fa-shield-cat text-primary"></i> Return home only after civil authorities announce safe clearance.</li>
+                <li><i class="fa-solid fa-shield-cat text-primary"></i> Inspect structural integrity before entering; beware of collapsed ceilings or sinkholes.</li>
+                <li><i class="fa-solid fa-shield-cat text-primary"></i> Discard all food and tap water that contacted flood runoff. Disinfect contaminated surfaces.</li>
+                <li><i class="fa-solid fa-shield-cat text-primary"></i> Document all damages with photographs for municipal insurance claims.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 7. ABOUT & ML ARCHITECTURE PAGE VIEW       -->
+        <!-- ========================================== -->
+        <section class="page-view" id="view-about" data-view="about">
+          <div class="page-header">
+            <div>
+              <h2>About AquaGuard & Future ML Backend Architecture</h2>
+              <p class="text-muted">System mission, technical specifications, and Python Machine Learning integration blueprint.</p>
+            </div>
+          </div>
+
+          <!-- Mission & Project Overview -->
+          <div class="content-card">
+            <div class="about-grid">
+              <div>
+                <h3 class="text-navy">AquaGuard HydroPredict Platform</h3>
+                <p class="lead-text">
+                  AquaGuard is an open-architecture, responsive Flood Prediction and Early Warning decision-support system. Designed with modern front-end web standards (HTML5, CSS3, and Vanilla JavaScript), it demonstrates how hydrological sensor telemetry, rainfall intensity, antecedent soil moisture, and atmospheric indicators can be combined into clear operational risk intelligence.
+                </p>
+                <div class="key-principles-list">
+                  <div class="principle-item">
+                    <i class="fa-solid fa-check-double text-cyan"></i>
+                    <div>
+                      <strong>Zero-Dependency Core:</strong> Built without heavy frameworks (No React, Angular, or Vue). Lightweight, fast, and accessible on any device.
+                    </div>
+                  </div>
+                  <div class="principle-item">
+                    <i class="fa-solid fa-bolt text-cyan"></i>
+                    <div>
+                      <strong>Transparent Algorithmic Scoring:</strong> Every risk output is backed by an inspectable mathematical weighting formula, making it ideal for educational research and calibration.
+                    </div>
+                  </div>
+                  <div class="principle-item">
+                    <i class="fa-solid fa-plug-circle-check text-cyan"></i>
+                    <div>
+                      <strong>Ready for Python ML Backend:</strong> Designed from the ground up to connect seamlessly with real Python Machine Learning models (Scikit-Learn, XGBoost, or PyTorch LSTM).
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="architecture-diagram-card">
+                <h4>System Architecture Pipeline</h4>
+                <div class="pipeline-flow">
+                  <div class="flow-step">
+                    <div class="step-icon"><i class="fa-solid fa-tower-broadcast"></i></div>
+                    <div class="step-text">
+                      <strong>1. Telemetry Ingestion</strong>
+                      <span>River gauge sensors & rain stations</span>
+                    </div>
+                  </div>
+                  <div class="flow-arrow"><i class="fa-solid fa-arrow-down"></i></div>
+                  <div class="flow-step">
+                    <div class="step-icon"><i class="fa-solid fa-gears"></i></div>
+                    <div class="step-text">
+                      <strong>2. Normalization & Feature Pipeline</strong>
+                      <span>Antecedent rain & soil saturation</span>
+                    </div>
+                  </div>
+                  <div class="flow-arrow"><i class="fa-solid fa-arrow-down"></i></div>
+                  <div class="flow-step highlight-step">
+                    <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
+                    <div class="step-text">
+                      <strong>3. ML Scoring Engine</strong>
+                      <span>Random Forest / XGBoost Regressor</span>
+                    </div>
+                  </div>
+                  <div class="flow-arrow"><i class="fa-solid fa-arrow-down"></i></div>
+                  <div class="flow-step">
+                    <div class="step-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div class="step-text">
+                      <strong>4. Early Warning & Leaflet GIS</strong>
+                      <span>Audible siren & evacuation broadcast</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Python Machine Learning Integration Blueprint -->
+          <div class="content-card mt-4">
+            <div class="card-header-flex">
+              <div>
+                <h4 class="card-title"><i class="fa-brands fa-python text-amber"></i> Python Machine Learning Integration Guide</h4>
+                <p class="card-subtitle">How to connect AquaGuard to a real FastAPI / Flask / Scikit-Learn microservice.</p>
+              </div>
+              <span class="badge badge-success">API Blueprint v1.0</span>
+            </div>
+
+            <div class="ml-integration-content">
+              <p>
+                In <code>script.js</code>, the API layer is organized via the <code>FloodPredictionService</code> module. By toggling <code>CONFIG.USE_MOCK_API = false</code> and providing your backend URL, the system immediately switches from the in-browser demonstration algorithm to real model inference:
+              </p>
+
+              <div class="code-tabs-wrapper">
+                <div class="code-tab-header">
+                  <button class="code-tab-btn active" data-tab="tab-fastapi">Python FastAPI Backend (server.py)</button>
+                  <button class="code-tab-btn" data-tab="tab-payload">JSON Request / Response Contract</button>
+                  <button class="code-tab-btn" data-tab="tab-client">Vanilla JS Client Adapter</button>
+                </div>
+
+                <!-- Tab 1: FastAPI code -->
+                <div class="code-tab-panel active" id="tab-fastapi">
+                  <pre><code><span class="code-keyword">from</span> fastapi <span class="code-keyword">import</span> FastAPI, HTTPException
+<span class="code-keyword">from</span> pydantic <span class="code-keyword">import</span> BaseModel, Field
+<span class="code-keyword">import</span> joblib
+<span class="code-keyword">import</span> numpy <span class="code-keyword">as</span> np
+
+app = FastAPI(title=<span class="code-string">"AquaGuard ML Flood Prediction API"</span>, version=<span class="code-string">"1.0"</span>)
+
+<span class="code-comment"># Load pre-trained Random Forest or XGBoost model</span>
+model = joblib.load(<span class="code-string">"flood_risk_xgboost_model.pkl"</span>)
+
+<span class="code-keyword">class</span> <span class="code-class">TelemetryPayload</span>(BaseModel):
+    station_id: str
+    rainfall_24h_mm: float = Field(..., ge=0, le=600)
+    river_water_level_m: float = Field(..., ge=0, le=25)
+    previous_rainfall_72h_mm: float = Field(..., ge=0, le=800)
+    soil_saturation_pct: float = Field(..., ge=0, le=100)
+    temperature_c: float
+    humidity_pct: float
+    drainage_factor: float = 1.0
+
+@app.post(<span class="code-string">"/api/v1/predict"</span>)
+<span class="code-keyword">def</span> <span class="code-func">predict_flood_risk</span>(data: TelemetryPayload):
+    <span class="code-comment"># Feature engineering vector</span>
+    features = np.array([[
+        data.rainfall_24h_mm,
+        data.river_water_level_m,
+        data.previous_rainfall_72h_mm,
+        data.soil_saturation_pct,
+        data.temperature_c,
+        data.humidity_pct,
+        data.drainage_factor
+    ]])
+    
+    risk_score = float(model.predict(features)[0])
+    risk_score = max(0.0, min(100.0, risk_score))
+    
+    <span class="code-keyword">if</span> risk_score &gt;= 80:
+        level, lead_time = <span class="code-string">"Critical"</span>, <span class="code-string">"&lt; 6 Hours"</span>
+    <span class="code-keyword">elif</span> risk_score &gt;= 60:
+        level, lead_time = <span class="code-string">"High"</span>, <span class="code-string">"6 - 18 Hours"</span>
+    <span class="code-keyword">elif</span> risk_score &gt;= 35:
+        level, lead_time = <span class="code-string">"Medium"</span>, <span class="code-string">"18 - 36 Hours"</span>
+    <span class="code-keyword">else</span>:
+        level, lead_time = <span class="code-string">"Low"</span>, <span class="code-string">"&gt; 48 Hours"</span>
+
+    <span class="code-keyword">return</span> {
+        <span class="code-string">"risk_score"</span>: round(risk_score, 1),
+        <span class="code-string">"risk_level"</span>: level,
+        <span class="code-string">"lead_time"</span>: lead_time,
+        <span class="code-string">"confidence"</span>: 0.942,
+        <span class="code-string">"status"</span>: <span class="code-string">"success"</span>
+    }</code></pre>
+                </div>
+
+                <!-- Tab 2: JSON Payload -->
+                <div class="code-tab-panel" id="tab-payload">
+                  <pre><code><span class="code-comment">// HTTP POST /api/v1/predict</span>
+<span class="code-comment">// Request Body:</span>
+{
+  <span class="code-string">"station_id"</span>: <span class="code-string">"Station Alpha (North River Valley)"</span>,
+  <span class="code-string">"rainfall_24h_mm"</span>: 125.4,
+  <span class="code-string">"river_water_level_m"</span>: 6.85,
+  <span class="code-string">"previous_rainfall_72h_mm"</span>: 140.2,
+  <span class="code-string">"soil_saturation_pct"</span>: 88,
+  <span class="code-string">"temperature_c"</span>: 23.5,
+  <span class="code-string">"humidity_pct"</span>: 94,
+  <span class="code-string">"drainage_factor"</span>: 1.15
+}
+
+<span class="code-comment">// Response (200 OK):</span>
+{
+  <span class="code-string">"risk_score"</span>: 78.4,
+  <span class="code-string">"risk_level"</span>: <span class="code-string">"High"</span>,
+  <span class="code-string">"lead_time"</span>: <span class="code-string">"6 - 12 Hours"</span>,
+  <span class="code-string">"runoff_ratio"</span>: 0.74,
+  <span class="code-string">"confidence"</span>: 0.938,
+  <span class="code-string">"contributions"</span>: {
+    <span class="code-string">"water_level"</span>: 31.9,
+    <span class="code-string">"rainfall"</span>: 24.1,
+    <span class="code-string">"antecedent"</span>: 11.2,
+    <span class="code-string">"soil_saturation"</span>: 11.2
+  }
+}</code></pre>
+                </div>
+
+                <!-- Tab 3: JS Client Adapter -->
+                <div class="code-tab-panel" id="tab-client">
+                  <pre><code><span class="code-comment">// Located in script.js - Simple Toggle</span>
+<span class="code-keyword">const</span> CONFIG = {
+  USE_MOCK_API: <span class="code-keyword">true</span>, <span class="code-comment">// Set to false for live Python backend</span>
+  API_BASE_URL: <span class="code-string">'http://localhost:8000/api/v1'</span>,
+};
+
+<span class="code-keyword">async function</span> <span class="code-func">predictRiskAPI</span>(payload) {
+  <span class="code-keyword">if</span> (CONFIG.USE_MOCK_API) {
+    <span class="code-keyword">return</span> computeDemonstrationRisk(payload);
+  }
+  
+  <span class="code-keyword">const</span> response = <span class="code-keyword">await</span> fetch(<span class="code-string">`\${CONFIG.API_BASE_URL}/predict`</span>, {
+    method: <span class="code-string">'POST'</span>,
+    headers: { <span class="code-string">'Content-Type'</span>: <span class="code-string">'application/json'</span> },
+    body: JSON.stringify(payload)
+  });
+  <span class="code-keyword">return await</span> response.json();
+}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formal Disclaimer Card -->
+          <div class="content-card mt-4 border-warning">
+            <div class="card-header-flex">
+              <h4 class="card-title text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Formal Simulation Disclaimer</h4>
+            </div>
+            <p class="text-muted">
+              AquaGuard is an educational, engineering prototype and demonstration software platform. All river basin names, telemetry stream generators, simulated water level measurements, and early warning announcements are generated for demonstration and research purposes only. This web application must not be relied upon as a primary source for official evacuation orders, life safety, or real-world disaster management. Always consult your national hydrological and emergency management agencies during actual flood threats.
+            </p>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- FOOTER -->
+      <footer class="app-footer">
+        <div class="footer-container">
+          <div class="footer-col">
+            <div class="footer-brand">
+              <i class="fa-solid fa-water-ladder"></i>
+              <span>AquaGuard HydroPredict</span>
+            </div>
+            <p class="footer-tagline">Open Hydrological Telemetry & Early Warning Decision Support.</p>
+          </div>
+
+          <div class="footer-col">
+            <h6>Navigation</h6>
+            <ul class="footer-links">
+              <li><a href="#home">Home</a></li>
+              <li><a href="#dashboard">Dashboard</a></li>
+              <li><a href="#prediction">Flood Predictor</a></li>
+              <li><a href="#monitoring">Live Telemetry</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h6>Resources</h6>
+            <ul class="footer-links">
+              <li><a href="#map">Basin Risk Map</a></li>
+              <li><a href="#warnings">Emergency Warnings</a></li>
+              <li><a href="#about">Python ML Specs</a></li>
+              <li><a href="#warnings">Evacuation Checklist</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h6>System Info</h6>
+            <p class="footer-meta">
+              Simulation Engine: <strong>Active (v2.4)</strong><br>
+              UI Stack: <strong>HTML5 &bull; CSS3 &bull; Vanilla JS</strong><br>
+              Libraries: <strong>Chart.js &bull; Leaflet OSM</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <span>&copy; 2026 AquaGuard HydroPredict. Simulation & Educational Demonstration.</span>
+          <div class="footer-badge">
+            <span class="status-dot online"></span> All Systems Operational
+          </div>
+        </div>
+      </footer>
+
+    </div> <!-- End .main-wrapper -->
+
+  </div> <!-- End .app-layout -->
+
+  <!-- ========================================== -->
+  <!-- MODALS & POPUPS                            -->
+  <!-- ========================================== -->
+
+  <!-- Create Custom Simulation Alert Modal -->
+  <div class="modal-backdrop hidden" id="customAlertModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h5><i class="fa-solid fa-triangle-exclamation text-warning"></i> Simulate Custom Warning Bulletin</h5>
+        <button class="modal-close-btn" id="closeAlertModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="customAlertForm">
+          <div class="form-group">
+            <label class="form-label">Affected River Basin / Station <span class="required">*</span></label>
+            <select id="modalStationSelect" class="form-control" required>
+              <option value="Station Alpha (North River Valley)">Station Alpha (North River Valley)</option>
+              <option value="Station Bravo (Metro Delta Junction)">Station Bravo (Metro Delta Junction)</option>
+              <option value="Station Charlie (East Estuary)">Station Charlie (East Estuary)</option>
+              <option value="Station Delta (Highland Gorge Reservoir)">Station Delta (Highland Gorge Reservoir)</option>
+              <option value="Station Echo (Pine Ridge Creek)">Station Echo (Pine Ridge Creek)</option>
+              <option value="Station Foxtrot (South Bay Marshlands)">Station Foxtrot (South Bay Marshlands)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Alert Severity Level <span class="required">*</span></label>
+            <select id="modalSeveritySelect" class="form-control" required>
+              <option value="Critical">Critical (Immediate Evacuation Warning)</option>
+              <option value="High" selected>High (Flood Threat Watch)</option>
+              <option value="Medium">Medium (Hydro Advisory)</option>
+              <option value="Low">Low (Informational / All Clear)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Bulletin Headline <span class="required">*</span></label>
+            <input type="text" id="modalAlertHeadline" class="form-control" placeholder="e.g. Rapid River Swell Detected at Gorge Spillway" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Safety Recommendation / Directive <span class="required">*</span></label>
+            <textarea id="modalAlertRecommendation" class="form-control" rows="3" placeholder="e.g. Residents in low-lying zones must relocate to designated emergency shelters immediately." required></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="cancelModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-danger">Broadcast Simulated Alert</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Third-party CDN Scripts -->
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Main Vanilla JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
